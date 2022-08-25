@@ -14,7 +14,7 @@ class Arch:
     def __init__(self, arch):
         arch = re.sub("^rv(32|64|128)g", 'rv\\1imafd', arch)
         m = re.match('rv(32|64|128)', arch)
-        self.base_arch = m.group(0)
+        self.base_arch = m[0]
         self.ext = []
         i = len(self.base_arch)
 
@@ -46,70 +46,67 @@ def get_white_list_files(raw_arch, abi, libc, white_list_base_dir):
 
     def append_if_exist(filename):
         if debug:
-            print ("Try append: %s" % filename)
+            print(f"Try append: {filename}")
         filepath = os.path.join(white_list_base_dir, filename)
         if os.path.exists(filepath):
             if debug:
-                print ("Got: %s" % filename)
+                print(f"Got: {filename}")
             white_list_files.append(filepath)
 
     libc_filename = "common.log"
     append_if_exist(libc_filename)
 
-    libc_filename = "%s.log" % (libc)
+    libc_filename = f"{libc}.log"
     append_if_exist(libc_filename)
 
-    filename = "%s.log" % (arch.base_arch)
+    filename = f"{arch.base_arch}.log"
     append_if_exist(filename)
 
-    filename = "%s.log" % (abi)
+    filename = f"{abi}.log"
     append_if_exist(filename)
 
-    filename = "%s.%s.log" % (arch.base_arch, abi)
+    filename = f"{arch.base_arch}.{abi}.log"
     append_if_exist(filename)
 
-    filename = "%s.%s.log" % (libc, arch.base_arch)
+    filename = f"{libc}.{arch.base_arch}.log"
     append_if_exist(filename)
 
-    filename = "%s.%s.log" % (libc, abi)
+    filename = f"{libc}.{abi}.log"
     append_if_exist(filename)
 
-    filename = "%s.%s.%s.log" % (libc, arch.base_arch, abi)
+    filename = f"{libc}.{arch.base_arch}.{abi}.log"
     append_if_exist(filename)
 
     for ext in arch.ext:
-        filename = "%s.log" % (ext)
+        filename = f"{ext}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.log" % (arch.base_arch, ext)
+        filename = f"{arch.base_arch}.{ext}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.log" % (ext, abi)
+        filename = f"{ext}.{abi}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.%s.log" % (arch.base_arch, ext, abi)
+        filename = f"{arch.base_arch}.{ext}.{abi}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.log" % (libc, ext)
+        filename = f"{libc}.{ext}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.%s.log" % (libc, arch.base_arch, ext)
+        filename = f"{libc}.{arch.base_arch}.{ext}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.%s.log" % (libc, ext, abi)
+        filename = f"{libc}.{ext}.{abi}.log"
         append_if_exist(filename)
 
-        filename = "%s.%s.%s.%s.log" % (libc, arch.base_arch, ext, abi)
+        filename = f"{libc}.{arch.base_arch}.{ext}.{abi}.log"
         append_if_exist(filename)
 
     return white_list_files
 
 
 def read_white_lists(white_list_files, is_gcc):
-    if is_gcc:
-        white_lists = dict()
-    else:
-        white_lists = set()
+    white_lists = {} if is_gcc else set()
     for fname in white_list_files:
         with open(fname) as f:
             content = f.readlines()
@@ -138,14 +135,14 @@ def read_white_lists(white_list_files, is_gcc):
 
 
 def read_sum(sum_files):
-    unexpected_results = dict()
+    unexpected_results = {}
     for sum_file in sum_files:
         with open(sum_file) as f:
             content = f.readlines()
             current_target = None
             variations = []
             scan_variations = False
-            unexpected_result = dict()
+            unexpected_result = {}
             tool = os.path.basename(sum_file).split(".")[0]
             for l in content:
                 if l.startswith("Schedule of variations"):
@@ -159,7 +156,7 @@ def read_sum(sum_files):
                 if l.startswith("Running target"):
                     # Parsing current running target.
                     current_target = l.split(" ")[-1].strip()
-                    unexpected_result[current_target] = list()
+                    unexpected_result[current_target] = []
                 elif l.startswith("FAIL") or l.startswith("XPASS") \
                      or l.startswith("ERROR"):
                     unexpected_result[current_target].append(l.strip())
@@ -171,13 +168,12 @@ def read_sum(sum_files):
 def get_white_list(arch, abi, libc, white_list_base_dir, is_gcc):
     white_list_files = \
         get_white_list_files(arch, abi, libc, white_list_base_dir)
-    white_list = read_white_lists(white_list_files, is_gcc)
-    return white_list
+    return read_white_lists(white_list_files, is_gcc)
 
 
 
 def filter_result(tool, libc, white_list_base_dir, unexpected_results):
-    summary = dict()
+    summary = {}
     any_fail = False
     is_gcc = tool == 'gcc'
     # Filter with white list.
@@ -212,14 +208,13 @@ def filter_result(tool, libc, white_list_base_dir, unexpected_results):
                                       white_list[key])):
                         # This item can be ignored
                         continue
-                    else:
-                        unexpected_result_list.append(ur)
-                        fail_count += 1
-                        case_count.add(key)
-                        any_fail = True
+                    unexpected_result_list.append(ur)
+                    fail_count += 1
+                    case_count.add(key)
+                    any_fail = True
 
                 if config not in summary:
-                    summary[config] = dict()
+                    summary[config] = {}
                 summary[config][testtool] = (fail_count, len(case_count))
             else:
                 for ur in unexpected_result:
@@ -229,11 +224,11 @@ def filter_result(tool, libc, white_list_base_dir, unexpected_results):
                         any_fail = True
 
                 if config not in summary:
-                    summary[config] = dict()
+                    summary[config] = {}
                 summary[config][testtool] = fail_count
 
 
-            if len(unexpected_result_list) != 0:
+            if unexpected_result_list:
                 print ("\t\t=== %s: Unexpected fails for %s %s %s ===" \
                        % (testtool, arch, abi, cmodel))
                 for ur in unexpected_result_list:
@@ -246,7 +241,7 @@ def filter_result(tool, libc, white_list_base_dir, unexpected_results):
     elif tool == 'binutils':
         toollist = ['binutils', 'ld', 'gas']
     else:
-        raise Exception("Unsupported tool `%s`" % tool)
+        raise Exception(f"Unsupported tool `{tool}`")
 
     bar_item = map(lambda x: "%13s" % x, toollist)
     bar = " |".join(bar_item)
@@ -255,7 +250,7 @@ def filter_result(tool, libc, white_list_base_dir, unexpected_results):
         print ("                            | # of unexpected case / # of unique unexpected case")
     else:
         print ("                            | # of unexpected case")
-    print ("                            |%s |" % bar)
+    print(f"                            |{bar} |")
     for config, result in summary.items():
         arch, abi, cmodel = config
         print (" %10s/ %6s/ %6s |" % (arch, abi, cmodel), end='')
@@ -271,10 +266,7 @@ def filter_result(tool, libc, white_list_base_dir, unexpected_results):
                 fail_count = summary[config][tool]
                 print ("%13d |" % fail_count, end='')
         print ("")
-    if any_fail:
-        return 1
-    else:
-        return 0
+    return 1 if any_fail else 0
 
 
 def main():
@@ -291,7 +283,7 @@ def main():
         rv = filter_result(tool, libc, white_list_base_dir,
                            unexpected_results)
     else:
-        print ("Unsupported tool: `%s`" % tool)
+        print(f"Unsupported tool: `{tool}`")
         rv = 1
 
     sys.exit(rv)
